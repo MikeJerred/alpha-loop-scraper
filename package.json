@@ -1,0 +1,7 @@
+{
+  "name": "alpha-loop-scraper",
+  "type": "module",
+  "dependencies": {
+    "@netlify/functions": "^4.1.8"
+  }
+}
