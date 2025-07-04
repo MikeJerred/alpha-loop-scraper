@@ -12,8 +12,8 @@ export interface LoopTable {
   borrow_asset_address: string;
   borrow_asset_symbol: string;
 
-  suply_asset_address: string;
-  suply_asset_symbol: string;
+  supply_asset_address: string;
+  supply_asset_symbol: string;
 
   borrow_apr_daily: number;
   borrow_apr_weekly: number;

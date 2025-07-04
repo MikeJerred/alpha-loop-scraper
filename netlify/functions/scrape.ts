@@ -16,8 +16,8 @@ export default async (req: Request, context: Context) => {
     borrow_asset_address: loop.borrowAsset.address,
     borrow_asset_symbol: loop.borrowAsset.symbol,
 
-    suply_asset_address: loop.supplyAsset.address,
-    suply_asset_symbol: loop.supplyAsset.symbol,
+    supply_asset_address: loop.supplyAsset.address,
+    supply_asset_symbol: loop.supplyAsset.symbol,
 
     borrow_apr_daily: loop.borrowApr.daily,
     borrow_apr_weekly: loop.borrowApr.weekly,

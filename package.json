@@ -2,7 +2,8 @@
   "name": "alpha-loop-scraper",
   "type": "module",
   "scripts": {
-    "invoke": "netlify functions:invoke scrape --port 9999"
+    "invoke": "netlify functions:invoke scrape --port 9999",
+    "generate:abis": "node --experimental-strip-types ./scripts/generate-abis.ts"
   },
   "dependencies": {
     "@bgd-labs/aave-address-book": "^4.24.1",
