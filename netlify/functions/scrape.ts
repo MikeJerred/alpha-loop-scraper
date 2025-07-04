@@ -3,7 +3,6 @@ import { db } from '~/database';
 import { scrapeAave, scrapeCompound, scrapeMorpho } from '~/protocols';
 
 export default async (req: Request, context: Context) => {
-
   const loops = await Promise.all([
     scrapeAave(),
     scrapeCompound(),

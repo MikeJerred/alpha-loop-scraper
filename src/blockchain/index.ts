@@ -1,5 +1,5 @@
-import { createPublicClient, extractChain, fallback, http, type FallbackTransport, type PublicClient } from 'viem';
-import { arbitrum, base, bsc, linea, mainnet, mantle, optimism, scroll, zksync } from 'viem/chains';
+import { createPublicClient, fallback, http, type FallbackTransport, type PublicClient } from 'viem';
+import { arbitrum, base, bsc, linea, mainnet, mantle, optimism, polygon, scroll, zksync } from 'viem/chains';
 
 const ALCHEMY_API_KEY = process.env.ALCHEMY_API_KEY;
 const INFURA_API_KEY = process.env.INFURA_API_KEY;
@@ -49,6 +49,12 @@ const chains = [
     'https://optimism-mainnet.public.blastapi.io',
     ...optimism.rpcUrls.default.http,
   ]],
+  [polygon, [
+    `https://polygon-mainnet.infura.io/v3/${INFURA_API_KEY}`,
+    `https://polygon-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
+    `https://polygon-mainnet.public.blastapi.io`,
+    ...polygon.rpcUrls.default.http,
+  ]],
   [scroll, [
     `https://scroll-mainnet.infura.io/v3/${INFURA_API_KEY}`,
     `https://scroll-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
@@ -63,6 +69,7 @@ const chains = [
   ]],
 ] as const;
 
+export const validChainIds = chains.map(([chain]) => chain.id);
 export type ChainId = typeof chains[number][0]['id'];
 
 const clients = new Map<number, PublicClient<FallbackTransport, typeof chains[number][0]>>();
@@ -71,18 +78,15 @@ export const getClient = (id: ChainId) => {
   const cached = clients.get(id);
   if (cached) return cached;
 
-  const chain = extractChain({ chains: chains.map(([chain]) => chain), id });
+  const chainData = chains.find(([c]) => c.id === id);
+  if (!chainData) throw new Error(`No data found for chain with id: ${id}`);
+
+  const [chain, rpcUrls] = chainData;
 
   const client = createPublicClient({
-    batch: { multicall: true },
+    // batch: { multicall: true },
     chain,
-    transport: fallback(
-      chains.flatMap(([, urls]) => urls.map(url => http(url, { batch: true }))),
-      {
-        retryCount: 10,
-        retryDelay: 150,
-      },
-    ),
+    transport: fallback(rpcUrls.map(url => http(url))),
   });
 
   clients.set(id, client);

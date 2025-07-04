@@ -1,8 +1,8 @@
 import { erc20Abi, getContract } from 'viem';
 import { arbitrum, base, linea, mainnet, mantle, optimism, polygon, scroll } from 'viem/chains';
 import { CompoundCometABI } from '~/abi/CompoundComet';
-import { getClient, type ChainId } from '~/blockchain';
-import { fetchRetry, type YieldLoop } from '~/util';
+import { getClient, validChainIds, type ChainId } from '~/blockchain';
+import { fetchRetry, isDefined, type YieldLoop } from '~/util';
 
 type Data = {
   chain_id: number,
@@ -32,6 +32,8 @@ export const scrape = async (): Promise<YieldLoop[]> => {
     .entries()
     .map(async ([address, items]) => {
       const chainId = items[0].chain_id as ChainId;
+      if (!validChainIds.includes(chainId)) return;
+
       const client = getClient(chainId);
 
       items.sort((a, b) => a.timestamp - b.timestamp);
@@ -54,7 +56,11 @@ export const scrape = async (): Promise<YieldLoop[]> => {
       const borrowTokenAddress = await comet.read.baseToken();
       let borrowTokenSymbol = erc20SymbolCache.get(borrowTokenAddress);
       if (!borrowTokenSymbol) {
-        borrowTokenSymbol = await client.readContract({ address: borrowTokenAddress, abi: erc20Abi, functionName: 'symbol' });
+        borrowTokenSymbol = await client.readContract({ address: borrowTokenAddress, abi: erc20Abi, functionName: 'symbol' })
+          .catch(e => {
+            console.error(`symbol from chain: ${chainId}, tokenAddr: ${borrowTokenAddress}, comet: ${address}`);
+            throw e;
+          });
         erc20SymbolCache.set(borrowTokenAddress, borrowTokenSymbol);
       }
 
@@ -64,7 +70,11 @@ export const scrape = async (): Promise<YieldLoop[]> => {
         const supplyTokenAddress = assetInfo.asset;
         let supplyTokenSymbol = erc20SymbolCache.get(supplyTokenAddress);
         if (!supplyTokenSymbol) {
-          supplyTokenSymbol = await client.readContract({ address: supplyTokenAddress, abi: erc20Abi, functionName: 'symbol' });
+          supplyTokenSymbol = await client.readContract({ address: supplyTokenAddress, abi: erc20Abi, functionName: 'symbol' })
+            .catch(e => {
+              console.error(`symbol from chain: ${chainId}, tokenAddr: ${supplyTokenAddress}, comet: ${address}`);
+              throw e;
+            });
           erc20SymbolCache.set(supplyTokenAddress, supplyTokenSymbol);
         }
 
@@ -104,18 +114,18 @@ export const scrape = async (): Promise<YieldLoop[]> => {
     })
   );
 
-  return results.flat();
+  return results.filter(isDefined).flat();
 };
 
 function getChainForUrl(id: number) {
   switch (id) {
+    case arbitrum.id: return 'arb';
+    case base.id: return 'basemainnet';
+    case linea.id: return 'linea';
     case mainnet.id: return 'mainnet';
+    case mantle.id: return 'mantle';
     case optimism.id: return 'op';
     case polygon.id: return 'polygon';
-    case mantle.id: return 'mantle';
-    case base.id: return 'basemainnet';
-    case arbitrum.id: return 'arb';
-    case linea.id: return 'linea';
     case scroll.id: return 'scroll';
     default: return null;
   }
