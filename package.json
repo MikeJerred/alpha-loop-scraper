@@ -2,11 +2,13 @@
   "name": "alpha-loop-scraper",
   "type": "module",
   "scripts": {
-    "invoke": "netlify functions:invoke scrape --port 9999",
+    "invoke:loops": "netlify functions:invoke loops --port 9999",
+    "invoke:yields": "netlify functions:invoke yields --port 9999",
     "generate:abis": "node --experimental-strip-types ./scripts/generate-abis.ts"
   },
   "dependencies": {
     "@bgd-labs/aave-address-book": "^4.24.1",
+    "@netlify/cache": "^3.0.5",
     "@netlify/functions": "^4.1.8",
     "graphql-request": "^7.2.0",
     "kysely": "^0.28.2",

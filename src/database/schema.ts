@@ -1,7 +1,8 @@
 import { Generated, Insertable, Selectable, Updateable } from 'kysely'
 
 export interface Database {
-  loops: LoopTable
+  loops: LoopTable;
+  yields: YieldTable;
 }
 
 export interface LoopTable {
@@ -34,3 +35,13 @@ export interface LoopTable {
 export type Loop = Selectable<LoopTable>;
 export type NewLoop = Insertable<LoopTable>;
 export type LoopUpdate = Updateable<LoopTable>;
+
+export interface YieldTable {
+  id: Generated<number>;
+  asset_addresses: string[];
+  asset_symbol: string;
+  yield_apr_daily: number | null;
+  yield_apr_weekly: number | null;
+  yield_apr_monthly: number | null;
+  yield_apr_yearly: number | null;
+}

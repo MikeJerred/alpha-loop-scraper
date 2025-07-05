@@ -2,7 +2,8 @@ import { erc20Abi, getContract } from 'viem';
 import { arbitrum, base, linea, mainnet, mantle, optimism, polygon, scroll } from 'viem/chains';
 import { CompoundCometABI } from '~/abi/CompoundComet';
 import { getClient, validChainIds, type ChainId } from '~/blockchain';
-import { fetchRetry, isDefined, type YieldLoop } from '~/util';
+import { fetchRetry, isDefined } from '~/util';
+import type { YieldLoop } from '.';
 
 type Data = {
   chain_id: number,

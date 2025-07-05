@@ -1,39 +1,6 @@
-export type Protocol = 'aave' | 'compound' | 'morpho';
-
-export type YieldLoop = {
-  protocol: Protocol,
-  chainId: number,
-  borrowAsset: {
-    address: string,
-    symbol: string,
-  },
-  supplyAsset: {
-    address: string,
-    symbol: string,
-  },
-  borrowApr: {
-    daily: number,
-    weekly: number,
-    monthly: number,
-    yearly: number,
-  },
-  supplyApr: {
-    daily: number,
-    weekly: number,
-    monthly: number,
-    yearly: number,
-  },
-  liquidityUSD: number,
-  maxLtv: number,
-  lltv: number,
-  link: string,
-};
-
 export const apyToApr = (apy: number) => Math.log(1 + apy);
 
-export const isDefined = <T>(value: T | null | undefined): value is T => value !== null && value !== undefined;
-
-export const average = (array: number[]) => array.reduce((value, total) => total + value) / array.length;
+export const average = (array: number[]) => array.reduce((total, value) => total + value) / array.length;
 
 export const isCorrelated = (symbol: string, type: 'btc' | 'eth' | 'usd') => {
   switch (type) {
@@ -48,6 +15,8 @@ export const isCorrelated = (symbol: string, type: 'btc' | 'eth' | 'usd') => {
         symbol.toLowerCase() === 'gho';
   }
 }
+
+export const isDefined = <T>(value: T | null | undefined): value is T => value !== null && value !== undefined;
 
 export const fetchRetry = async (url: string) => {
   const retries = 7;

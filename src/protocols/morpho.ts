@@ -1,6 +1,7 @@
 import { gql, request as gqlRequest } from 'graphql-request';
 import { base, mainnet } from 'viem/chains';
-import { apyToApr, isDefined, type YieldLoop } from '~/util';
+import { apyToApr, isDefined} from '~/util';
+import type { YieldLoop } from '.';
 
 type Item = {
   loanAsset?: {

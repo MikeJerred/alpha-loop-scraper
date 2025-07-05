@@ -11,7 +11,8 @@ import { getContract } from 'viem';
 import { arbitrum, base, mainnet, scroll, zksync } from 'viem/chains';
 import { IUiPoolDataProvider_ABI } from '~/abi/AaveUiPoolDataProvider';
 import { getClient } from '~/blockchain';
-import { average, fetchRetry, isCorrelated, type YieldLoop } from '~/util';
+import { average, fetchRetry, isCorrelated } from '~/util';
+import type { YieldLoop } from '.';
 
 type AaveRateCacheItem = {
   supply?: {
