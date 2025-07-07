@@ -1,8 +1,10 @@
-import type { Config, Context } from '@netlify/functions';
+import type { Config, Context, schedule } from '@netlify/functions';
 import { db } from '~/database';
 import { scrapeAave, scrapeCompound, scrapeMorpho } from '~/protocols';
 
 export default async (req: Request, context: Context) => {
+  console.log(`Running 'loops' function...`);
+
   const loops = await Promise.all([
     scrapeAave(),
     scrapeCompound(),
@@ -37,11 +39,12 @@ export default async (req: Request, context: Context) => {
 
   await db.transaction().execute(async trx => {
     await trx.deleteFrom('loops').execute();
-    return await trx.insertInto('loops')
+    await trx.insertInto('loops')
       .values(values)
       .execute();
   });
 
+  console.log(`Updated with ${values.length} loop entries`);
   return new Response("Success!");
 }
 

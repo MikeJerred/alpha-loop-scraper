@@ -1,0 +1,5 @@
+[functions."loops"]
+schedule = "0 0 * * *"
+
+[functions."yields"]
+schedule = "0 1 * * *"

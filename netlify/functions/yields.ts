@@ -3,6 +3,8 @@ import { db } from '~/database';
 import { getPendleYield, scrapeDefiLlama, type YieldData } from '~/yields';
 
 export default async (req: Request, context: Context) => {
+  console.log(`Running 'yields' function...`);
+
   const borrowAddresses = db.selectFrom('loops').select(['chain_id', 'borrow_asset_address as address', 'borrow_asset_symbol as symbol']);
   const supplyAddresses = db.selectFrom('loops').select(['chain_id', 'supply_asset_address as address', 'supply_asset_symbol as symbol']);
   const results = await borrowAddresses.union(supplyAddresses).execute();
@@ -30,7 +32,6 @@ export default async (req: Request, context: Context) => {
   ]);
 
   const values = yields.flat().map(data => ({
-    asset_addresses: data.asset.addresses,
     asset_symbol: data.asset.symbol,
     yield_apr_daily: data.yields.daily,
     yield_apr_weekly: data.yields.weekly,
@@ -40,11 +41,12 @@ export default async (req: Request, context: Context) => {
 
   await db.transaction().execute(async trx => {
     await trx.deleteFrom('yields').execute();
-    return await trx.insertInto('yields')
+    await trx.insertInto('yields')
       .values(values)
       .execute();
   });
 
+  console.log(`Updated with ${values.length} yield entries`);
   return new Response("Success!");
 }
 

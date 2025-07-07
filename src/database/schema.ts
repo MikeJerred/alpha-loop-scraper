@@ -38,7 +38,6 @@ export type LoopUpdate = Updateable<LoopTable>;
 
 export interface YieldTable {
   id: Generated<number>;
-  asset_addresses: string[];
   asset_symbol: string;
   yield_apr_daily: number | null;
   yield_apr_weekly: number | null;
