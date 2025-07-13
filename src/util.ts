@@ -1,6 +1,6 @@
 export const apyToApr = (apy: number) => Math.log(1 + apy);
 
-export const average = (array: number[]) => array.reduce((total, value) => total + value) / array.length;
+export const average = (array: number[]) => array.reduce((total, value) => total + value, 0) / array.length;
 
 export const isCorrelated = (symbol: string, type: 'btc' | 'eth' | 'usd') => {
   switch (type) {

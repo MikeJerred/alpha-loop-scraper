@@ -1,6 +1,5 @@
-import { apyToApr, average } from '~/util';
+import { apyToApr, average, isDefined } from '~/util';
 import type { YieldData } from '.';
-import { fetchWithCache } from '@netlify/cache';
 
 const defiLlamaPools = {
   // staked eth
@@ -60,27 +59,30 @@ type ChartResponse = {
 
 const hasDefiLlamaPool = (symbol: string): symbol is keyof typeof defiLlamaPools => Object.hasOwn(defiLlamaPools, symbol);
 
-export const scrape = async (tokenSymbols: Set<string>): Promise<YieldData[]> => {
-  const response = await fetchWithCache(`https://yields.llama.fi/pools`);
-  const pools: PoolsResponse = await response.json();
+export const scrape = async (): Promise<YieldData[]> => {
+  const results = await Promise.all(Object.entries(defiLlamaPools).map(async ([symbol, pool]) => {
+    const yields = await getPoolYields(pool);
+    if (!yields) return null;
 
-  return await Promise.all(pools.data
-    .filter(({ symbol }) => tokenSymbols.has(symbol.toLowerCase()))
-    .map(async pool => {
-      const yields = await getPoolYields(pool.pool);
-      return {
-        asset: {
-          addresses: [],
-          symbol: pool.symbol.toLowerCase(),
-        },
-        yields,
-      };
-    })
-  );
+    return {
+      asset: {
+        addresses: [],
+        symbol: symbol.toLowerCase(),
+      },
+      yields,
+    };
+  }));
+
+  return results.filter(isDefined);
 };
 
 export async function getPoolYields(pool: string) {
-  const response = await fetch(`https://yields.llama.fi/chart/${pool}`);
+  const response = await fetch(`https://yields.llama.fi/chart/${pool}`).catch(error => {
+    console.warn(`Unable to fetch defi llama pool ${pool}`, error);
+    return null;
+  });
+  if (!response) return null;
+
   const { data }: ChartResponse = await response.json();
 
   const now = new Date();
@@ -103,10 +105,16 @@ export async function getPoolYields(pool: string) {
     .filter(({ timestamp }) => new Date(timestamp).getTime() >= nowMinus30Days.getTime())
     .map(({ apy }) => apy);
 
+  const nowMinus365Days = new Date();
+  nowMinus365Days.setDate(now.getDate() - 365);
+  const yearlyData = data
+    .filter(({ timestamp }) => new Date(timestamp).getTime() >= nowMinus365Days.getTime())
+    .map(({ apy }) => apy);
+
   return {
     daily: apyToApr(average(dailyData)),
     weekly: apyToApr(average(weeklyData)),
     monthly: apyToApr(average(monthlyData)),
-    yearly: null,
+    yearly: apyToApr(average(yearlyData)),
   };
 }

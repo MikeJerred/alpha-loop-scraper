@@ -17,6 +17,12 @@
       "env": {
         "NODE_OPTIONS": "--inspect"
       }
+    },
+    {
+      "name": "Attach",
+      "type": "node",
+      "request": "attach",
+      "port": 9229
     }
   ]
 }

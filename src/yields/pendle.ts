@@ -1,4 +1,5 @@
 import { fetchWithCache } from '@netlify/cache';
+import { arbitrum, base, bsc, mainnet, mantle, optimism } from 'viem/chains';
 import { apyToApr } from '~/util';
 
 type PendleMarketsResponse = {
@@ -14,9 +15,13 @@ type PendleMarketsResponse = {
   }[],
 };
 
+const validChainIds = [arbitrum.id, base.id, bsc.id, mainnet.id, mantle.id, optimism.id] as number[];
+
 export async function getPendleYield(chainId: number, tokenAddress: string) {
+  if (!validChainIds.includes(chainId)) return null;
+
   const markets = await getPendleMarkets(chainId);
-  const data = markets.find(({ address, pt }) =>
+  const data = markets?.find(({ address, pt }) =>
     address.toLowerCase() === tokenAddress.toLowerCase() ||
     pt.toLowerCase() === `${chainId}-${tokenAddress}`.toLowerCase()
   );
@@ -35,7 +40,11 @@ export async function getPendleYield(chainId: number, tokenAddress: string) {
 }
 
 async function getPendleMarkets(chainId: number) {
-  const response = await fetchWithCache(`https://api-v2.pendle.finance/core/v1/${chainId}/markets/active`, { ttl: 60*60 });
+  const response = await fetchWithCache(`https://api-v2.pendle.finance/core/v1/${chainId}/markets/active`, { ttl: 60*60 })
+    .catch(() => null);
+
+  if (!response) return null;
+
   const { markets }: PendleMarketsResponse = await response.json();
   return markets;
 }

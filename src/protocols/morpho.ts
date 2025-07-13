@@ -1,5 +1,5 @@
 import { gql, request as gqlRequest } from 'graphql-request';
-import { base, mainnet } from 'viem/chains';
+import { base, mainnet, polygon, unichain } from 'viem/chains';
 import { apyToApr, isDefined} from '~/util';
 import type { YieldLoop } from '.';
 
@@ -136,6 +136,8 @@ const getChainForUrl = (id: number) => {
   switch (id) {
     case mainnet.id: return 'ethereum';
     case base.id: return 'base';
+    case polygon.id: return 'polygon';
+    case unichain.id: return 'unichain';
     default: return null;
   }
 };
