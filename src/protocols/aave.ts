@@ -41,88 +41,95 @@ const aaveRateCache = new Map<string, AaveRateCacheItem | null>();
 
 export const scrape = async (): Promise<YieldLoop[]> => {
   aaveRateCache.clear();
+
+  const results = await Promise.all(Object.entries(providers)
+    .map(([providerKey, provider]) => getProviderLoops(providerKey, provider))
+  );
+
+  return results.flat();
+};
+
+async function getProviderLoops(providerKey: string, [provider, chainId]: typeof providers[keyof typeof providers]) {
   const results: YieldLoop[] = [];
 
-  for (const [providerKey, [provider, chainId]] of Object.entries(providers)) {
-    const client = getClient(chainId);
-    const uiPoolData = getContract({
-      abi: IUiPoolDataProvider_ABI,
-      address: provider.UI_POOL_DATA_PROVIDER,
-      client,
-    });
+  const client = getClient(chainId);
+  const uiPoolData = getContract({
+    abi: IUiPoolDataProvider_ABI,
+    address: provider.UI_POOL_DATA_PROVIDER,
+    client,
+  });
 
-    const [reserves, referenceCurrency] = await uiPoolData.read.getReservesData([provider.POOL_ADDRESSES_PROVIDER]);
-    const eModes = await uiPoolData.read.getEModes([provider.POOL_ADDRESSES_PROVIDER]);
+  const [reserves, referenceCurrency] = await uiPoolData.read.getReservesData([provider.POOL_ADDRESSES_PROVIDER]);
+  const eModes = await uiPoolData.read.getEModes([provider.POOL_ADDRESSES_PROVIDER]);
 
-    for (const [supplyIndex, supplyAsset] of reserves.entries()) {
-      if (!supplyAsset.symbol || !supplyAsset.isActive || supplyAsset.isFrozen || supplyAsset.isPaused) continue;
+  for (const [supplyIndex, supplyAsset] of reserves.entries()) {
+    if (!supplyAsset.symbol || !supplyAsset.isActive || supplyAsset.isFrozen || supplyAsset.isPaused) continue;
 
-      for (const [borrowIndex, borrowAsset] of reserves.entries()) {
-        if (!borrowAsset.symbol || !borrowAsset.isActive || borrowAsset.isFrozen || borrowAsset.isPaused) continue;
-        if (supplyAsset === borrowAsset || !borrowAsset.borrowingEnabled) continue;
+    for (const [borrowIndex, borrowAsset] of reserves.entries()) {
+      if (!borrowAsset.symbol || !borrowAsset.isActive || borrowAsset.isFrozen || borrowAsset.isPaused) continue;
+      if (supplyAsset === borrowAsset || !borrowAsset.borrowingEnabled) continue;
 
-        const areAssetsCorrelated =
-          isCorrelated(supplyAsset.symbol, 'btc') && isCorrelated(borrowAsset.symbol, 'btc') ||
-          isCorrelated(supplyAsset.symbol, 'eth') && isCorrelated(borrowAsset.symbol, 'eth') ||
-          isCorrelated(supplyAsset.symbol, 'usd') && isCorrelated(borrowAsset.symbol, 'usd');
-        if (!areAssetsCorrelated) continue;
+      const areAssetsCorrelated =
+        isCorrelated(supplyAsset.symbol, 'btc') && isCorrelated(borrowAsset.symbol, 'btc') ||
+        isCorrelated(supplyAsset.symbol, 'eth') && isCorrelated(borrowAsset.symbol, 'eth') ||
+        isCorrelated(supplyAsset.symbol, 'usd') && isCorrelated(borrowAsset.symbol, 'usd');
+      if (!areAssetsCorrelated) continue;
 
-        const validEModes = eModes.filter(eMode =>
-          getBit(eMode.eMode.collateralBitmap, supplyIndex) &&
-          getBit(eMode.eMode.borrowableBitmap, borrowIndex)
-        );
+      const validEModes = eModes.filter(eMode =>
+        getBit(eMode.eMode.collateralBitmap, supplyIndex) &&
+        getBit(eMode.eMode.borrowableBitmap, borrowIndex)
+      );
 
-        const maxLtv = Math.max(
-          Number(supplyAsset.baseLTVasCollateral) / 10000,
-          ...validEModes.map(eMode => eMode.eMode.ltv / 10000),
-        );
-        const lltv = Math.max(
-          Number(supplyAsset.reserveLiquidationThreshold) / 10000,
-          ...validEModes.map(eMode => eMode.eMode.liquidationThreshold / 10000),
-        );
+      const maxLtv = Math.max(
+        Number(supplyAsset.baseLTVasCollateral) / 10000,
+        ...validEModes.map(eMode => eMode.eMode.ltv / 10000),
+      );
+      const lltv = Math.max(
+        Number(supplyAsset.reserveLiquidationThreshold) / 10000,
+        ...validEModes.map(eMode => eMode.eMode.liquidationThreshold / 10000),
+      );
 
-        const supplyAPRs = (await getRate(chainId, provider.POOL_ADDRESSES_PROVIDER, supplyAsset.underlyingAsset))?.supply;
-        const borrowAPRs = (await getRate(chainId, provider.POOL_ADDRESSES_PROVIDER, borrowAsset.underlyingAsset))?.borrow;
+      const supplyAPRs = (await getRate(chainId, provider.POOL_ADDRESSES_PROVIDER, supplyAsset.underlyingAsset))?.supply;
+      const borrowAPRs = (await getRate(chainId, provider.POOL_ADDRESSES_PROVIDER, borrowAsset.underlyingAsset))?.borrow;
 
-        if (!borrowAPRs) continue;
+      if (!borrowAPRs) continue;
 
-        results.push({
-          protocol: 'aave',
-          chainId,
-          borrowAsset: {
-            address: borrowAsset.underlyingAsset,
-            symbol: borrowAsset.symbol,
-          },
-          supplyAsset: {
-            address: supplyAsset.underlyingAsset,
-            symbol: supplyAsset.symbol,
-          },
-          supplyApr: {
-            daily: supplyAPRs?.daily ?? 0,
-            weekly: supplyAPRs?.weekly ?? 0,
-            monthly: supplyAPRs?.monthly ?? 0,
-            yearly: 12 * (supplyAPRs?.monthly ?? 0),
-          },
-          borrowApr: {
-            daily: borrowAPRs.daily ?? 0,
-            weekly: borrowAPRs.weekly ?? 0,
-            monthly: borrowAPRs.monthly ?? 0,
-            yearly: 12 * (borrowAPRs.monthly ?? 0),
-          },
-          liquidityUSD: Number(
-            (borrowAsset.priceInMarketReferenceCurrency / referenceCurrency.marketReferenceCurrencyPriceInUsd) *
-            borrowAsset.availableLiquidity / (10n ** borrowAsset.decimals)
-          ),
-          maxLtv,
-          lltv,
-          link: `https://app.aave.com/reserve-overview/?underlyingAsset=${borrowAsset.underlyingAsset.toLowerCase()}&marketName=proto_${providerKey}_v3`,
-        });
-      }
+      results.push({
+        protocol: 'aave',
+        chainId,
+        borrowAsset: {
+          address: borrowAsset.underlyingAsset,
+          symbol: borrowAsset.symbol,
+        },
+        supplyAsset: {
+          address: supplyAsset.underlyingAsset,
+          symbol: supplyAsset.symbol,
+        },
+        supplyApr: {
+          daily: supplyAPRs?.daily ?? 0,
+          weekly: supplyAPRs?.weekly ?? 0,
+          monthly: supplyAPRs?.monthly ?? 0,
+          yearly: 12 * (supplyAPRs?.monthly ?? 0),
+        },
+        borrowApr: {
+          daily: borrowAPRs.daily ?? 0,
+          weekly: borrowAPRs.weekly ?? 0,
+          monthly: borrowAPRs.monthly ?? 0,
+          yearly: 12 * (borrowAPRs.monthly ?? 0),
+        },
+        liquidityUSD: Number(
+          (borrowAsset.priceInMarketReferenceCurrency / referenceCurrency.marketReferenceCurrencyPriceInUsd) *
+          borrowAsset.availableLiquidity / (10n ** borrowAsset.decimals)
+        ),
+        maxLtv,
+        lltv,
+        link: `https://app.aave.com/reserve-overview/?underlyingAsset=${borrowAsset.underlyingAsset.toLowerCase()}&marketName=proto_${providerKey}_v3`,
+      });
     }
   }
 
   return results;
-};
+}
 
 async function getRate(chainId: number, poolAddressesProvider: `0x${string}`, tokenAddress: `0x${string}`) {
   const key = `${tokenAddress}${poolAddressesProvider}${chainId}`;

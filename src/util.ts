@@ -1,6 +1,10 @@
+/**
+ * @param apy APY in decimal form, e.g. 10% APY should be provided as the number 0.1
+ * @returns The equivalent APR in decimal form, e.g. a value of 0.1 represents 10% APR
+ */
 export const apyToApr = (apy: number) => Math.log(1 + apy);
 
-export const average = (array: number[]) => array.reduce((total, value) => total + value, 0) / array.length;
+export const average = (array: number[]) => array.length > 0 ? array.reduce((total, value) => total + value) / array.length : 0;
 
 export const isCorrelated = (symbol: string, type: 'btc' | 'eth' | 'usd') => {
   switch (type) {

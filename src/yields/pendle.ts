@@ -1,9 +1,9 @@
-import { fetchWithCache } from '@netlify/cache';
-import { arbitrum, base, bsc, mainnet, mantle, optimism } from 'viem/chains';
+import { arbitrum, base, mainnet, mantle, optimism } from 'viem/chains';
 import { apyToApr } from '~/util';
 
 type PendleMarketsResponse = {
   markets: {
+    name: string,
     address: string,
     pt: string,
     yt: string,
@@ -15,19 +15,20 @@ type PendleMarketsResponse = {
   }[],
 };
 
-const validChainIds = [arbitrum.id, base.id, bsc.id, mainnet.id, mantle.id, optimism.id] as number[];
+const validChainIds = [arbitrum.id, base.id, mainnet.id, mantle.id, optimism.id] as number[];
 
 export async function getPendleYield(chainId: number, tokenAddress: string) {
+  tokenAddress = tokenAddress.toLowerCase();
   if (!validChainIds.includes(chainId)) return null;
 
   const markets = await getPendleMarkets(chainId);
   const data = markets?.find(({ address, pt }) =>
-    address.toLowerCase() === tokenAddress.toLowerCase() ||
-    pt.toLowerCase() === `${chainId}-${tokenAddress}`.toLowerCase()
+    address.toLowerCase() === tokenAddress ||
+    pt.toLowerCase() === `${chainId}-${tokenAddress}`
   );
 
   if (data) {
-    if (data.address.toLowerCase() === tokenAddress.toLowerCase()) {
+    if (data.address.toLowerCase() === tokenAddress) {
       // lp token
       return apyToApr(data.details.aggregatedApy);
     } else {
@@ -39,12 +40,17 @@ export async function getPendleYield(chainId: number, tokenAddress: string) {
   return null;
 }
 
+const marketsCache = new Map<number, PendleMarketsResponse | null>();
+
 async function getPendleMarkets(chainId: number) {
-  const response = await fetchWithCache(`https://api-v2.pendle.finance/core/v1/${chainId}/markets/active`, { ttl: 60*60 })
-    .catch(() => null);
+  let data = marketsCache.get(chainId);
+  if (data !== undefined) return data?.markets;
 
-  if (!response) return null;
+  const response = await fetch(`https://api-v2.pendle.finance/core/v1/${chainId}/markets/active`).catch(() => null);
 
-  const { markets }: PendleMarketsResponse = await response.json();
-  return markets;
+  data = response ? await response.json() : null;
+
+  marketsCache.set(chainId, data ?? null);
+
+  return data?.markets;
 }

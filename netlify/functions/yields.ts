@@ -14,23 +14,23 @@ export default async (req: Request, context: Context) => {
 
   const yields = await Promise.all([
     scrapeDefiLlama(),
-  //   ...results.map(async ({ chain_id, address, symbol }) => {
-  //     const pendleYield = await getPendleYield(chain_id, address);
-  //     if (!pendleYield) return [];
+    ...results.map(async ({ chain_id, address, symbol }) => {
+      const pendleYield = await getPendleYield(chain_id, address);
+      if (!pendleYield) return [];
 
-  //     return [{
-  //       asset: {
-  //         addresses: [`${chain_id}-${address.toLowerCase()}`],
-  //         symbol,
-  //       },
-  //       yields: {
-  //         daily: pendleYield,
-  //         weekly: null,
-  //         monthly: null,
-  //         yearly: null,
-  //       },
-  //     } as YieldData];
-  //   }),
+      return [{
+        asset: {
+          addresses: [`${chain_id}-${address.toLowerCase()}`],
+          symbol,
+        },
+        yields: {
+          daily: pendleYield,
+          weekly: null,
+          monthly: null,
+          yearly: null,
+        },
+      } as YieldData];
+    }),
   ]);
 
   const values = yields.flat().map(data => ({

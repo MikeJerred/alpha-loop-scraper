@@ -112,9 +112,9 @@ export async function getPoolYields(pool: string) {
     .map(({ apy }) => apy);
 
   return {
-    daily: apyToApr(average(dailyData)),
-    weekly: apyToApr(average(weeklyData)),
-    monthly: apyToApr(average(monthlyData)),
-    yearly: apyToApr(average(yearlyData)),
+    daily: apyToApr(average(dailyData) / 100),
+    weekly: apyToApr(average(weeklyData) / 100),
+    monthly: apyToApr(average(monthlyData) / 100),
+    yearly: apyToApr(average(yearlyData) / 100),
   };
 }

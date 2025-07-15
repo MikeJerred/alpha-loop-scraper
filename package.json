@@ -2,8 +2,8 @@
   "name": "alpha-loop-scraper",
   "type": "module",
   "scripts": {
-    "invoke:loops": "netlify functions:invoke loops --port 9999",
-    "invoke:yields": "netlify functions:invoke yields --port 9999",
+    "invoke:loops": "netlify functions:invoke loops",
+    "invoke:yields": "netlify functions:invoke yields",
     "generate:abis": "node --experimental-strip-types ./scripts/generate-abis.ts"
   },
   "dependencies": {
