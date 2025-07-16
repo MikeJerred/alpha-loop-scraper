@@ -1,4 +1,4 @@
-import type { Context } from '@netlify/functions';
+import type { Config, Context } from '@netlify/functions';
 import { db } from '~/database';
 import { scrapeAave, scrapeCompound, scrapeMorpho } from '~/protocols';
 
@@ -49,3 +49,7 @@ export default async (req: Request, context: Context) => {
   console.log(`Updated db with ${values.length} loop entries`);
   return new Response("Success!");
 }
+
+export const config: Config = {
+  schedule: '0 1 * * *',
+};

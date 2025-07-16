@@ -1,5 +1,5 @@
 import { erc20Abi, getContract } from 'viem';
-import { arbitrum, base, linea, mainnet, mantle, optimism, polygon, scroll } from 'viem/chains';
+import { arbitrum, base, linea, mainnet, mantle, optimism, polygon, scroll, unichain } from 'viem/chains';
 import { CompoundCometABI } from '~/abi/CompoundComet';
 import { getClient, validChainIds, type ChainId } from '~/blockchain';
 import { fetchRetry, isDefined } from '~/util';
@@ -128,6 +128,7 @@ function getChainForUrl(id: number) {
     case optimism.id: return 'op';
     case polygon.id: return 'polygon';
     case scroll.id: return 'scroll';
+    case unichain.id: return 'unichain';
     default: return null;
   }
 }
