@@ -19,11 +19,13 @@ type AaveRateCacheItem = {
     daily?: number,
     weekly?: number,
     monthly?: number,
+    yearly? : number,
   },
   borrow?: {
     daily?: number,
     weekly?: number,
     monthly?: number,
+    yearly? : number,
   },
 };
 
@@ -109,13 +111,13 @@ async function getProviderLoops(providerKey: string, [provider, chainId]: typeof
           daily: supplyAPRs?.daily ?? 0,
           weekly: supplyAPRs?.weekly ?? 0,
           monthly: supplyAPRs?.monthly ?? 0,
-          yearly: 12 * (supplyAPRs?.monthly ?? 0),
+          yearly: supplyAPRs?.yearly ?? 0,
         },
         borrowApr: {
           daily: borrowAPRs.daily ?? 0,
           weekly: borrowAPRs.weekly ?? 0,
           monthly: borrowAPRs.monthly ?? 0,
-          yearly: 12 * (borrowAPRs.monthly ?? 0),
+          yearly: borrowAPRs.yearly ?? 0,
         },
         liquidityUSD: Number(
           (borrowAsset.priceInMarketReferenceCurrency / referenceCurrency.marketReferenceCurrencyPriceInUsd) *
@@ -148,11 +150,13 @@ async function getRate(chainId: number, poolAddressesProvider: `0x${string}`, to
         daily: average(data.map(x => x.liquidityRate_avg).slice(-1)),
         weekly: average(data.map(x => x.liquidityRate_avg).slice(-7)),
         monthly: average(data.map(x => x.liquidityRate_avg).slice(-30)),
+        yearly: average(data.map(x => x.liquidityRate_avg).slice(-365)),
       },
       borrow: {
         daily: average(data.map(x => x.variableBorrowRate_avg).slice(-1)),
         weekly: average(data.map(x => x.variableBorrowRate_avg).slice(-7)),
         monthly: average(data.map(x => x.variableBorrowRate_avg).slice(-30)),
+        yearly: average(data.map(x => x.variableBorrowRate_avg).slice(-365)),
       },
     } satisfies AaveRateCacheItem
     : null;
