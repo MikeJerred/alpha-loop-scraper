@@ -1,5 +1,0 @@
-[functions."loops"]
-schedule = "0 1 * * *"
-
-[functions."yields"]
-schedule = "0 2 * * *"
