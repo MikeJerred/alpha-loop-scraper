@@ -1,6 +1,6 @@
 import { gql, request as gqlRequest } from 'graphql-request';
 import { base, mainnet, polygon, unichain } from 'viem/chains';
-import { apyToApr, isDefined} from '~/util';
+import { apyToApr, isDefined } from '~/util';
 import type { YieldLoop } from '.';
 
 type Item = {
@@ -126,13 +126,13 @@ export const scrape = async (): Promise<YieldLoop[]> => {
           : state.liquidityAssetsUsd ?? 0,
         maxLtv: Number(BigInt(lltv) / 10n**12n) / 10**6,
         lltv: Number(BigInt(lltv) / 10n**12n) / 10**6,
-        link: `https://app.morpho.org/${getChainForUrl(morphoBlue.chain.id)}/market/${uniqueKey}`,
+        link: `https://app.morpho.org/${formatChainForUrl(morphoBlue.chain.id)}/market/${uniqueKey}`,
       };
     })
     .filter(isDefined);
 };
 
-const getChainForUrl = (id: number) => {
+const formatChainForUrl = (id: number) => {
   switch (id) {
     case mainnet.id: return 'ethereum';
     case base.id: return 'base';
