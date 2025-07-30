@@ -1,4 +1,4 @@
-import type { Config, Context } from '@netlify/functions';
+import type { Context } from '@netlify/functions';
 import { scrapeCompound, updateLoopsData } from '~/protocols';
 
 export default async (req: Request, context: Context) => {
@@ -9,7 +9,3 @@ export default async (req: Request, context: Context) => {
 
   return new Response("Success!");
 }
-
-export const config: Config = {
-  schedule: '5 1 * * *',
-};

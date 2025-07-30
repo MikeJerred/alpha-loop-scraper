@@ -1,0 +1,11 @@
+[functions."loops-aave"]
+schedule = "0 1 * * *"
+
+[functions."loops-compound"]
+schedule = "5 1 * * *"
+
+[functions."loops-morpho"]
+schedule = "10 1 * * *"
+
+[functions."yields"]
+schedule = "0 2 * * *"

@@ -20,7 +20,6 @@ var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: tru
 // netlify/functions/yields.ts
 var yields_exports = {};
 __export(yields_exports, {
-  config: () => config,
   default: () => yields_default
 });
 module.exports = __toCommonJS(yields_exports);
@@ -12098,9 +12097,9 @@ var LOG_LEVELS = freeze(["query", "error"]);
 var Log = class {
   #levels;
   #logger;
-  constructor(config2) {
-    if (isFunction(config2)) {
-      this.#logger = config2;
+  constructor(config) {
+    if (isFunction(config)) {
+      this.#logger = config;
       this.#levels = freeze({
         query: true,
         error: true
@@ -12108,8 +12107,8 @@ var Log = class {
     } else {
       this.#logger = defaultLogger;
       this.#levels = freeze({
-        query: config2.includes("query"),
-        error: config2.includes("error")
+        query: config.includes("query"),
+        error: config.includes("error")
       });
     }
   }
@@ -14752,8 +14751,8 @@ var PostgresDriver = class {
   #config;
   #connections = /* @__PURE__ */ new WeakMap();
   #pool;
-  constructor(config2) {
-    this.#config = freeze({ ...config2 });
+  constructor(config) {
+    this.#config = freeze({ ...config });
   }
   async init() {
     this.#pool = isFunction(this.#config.pool) ? await this.#config.pool() : this.#config.pool;
@@ -14863,8 +14862,8 @@ var PostgresConnection = class {
 // node_modules/kysely/dist/esm/dialect/postgres/postgres-dialect.js
 var PostgresDialect = class {
   #config;
-  constructor(config2) {
-    this.#config = config2;
+  constructor(config) {
+    this.#config = config;
   }
   createDriver() {
     return new PostgresDriver(this.#config);
@@ -17633,13 +17632,6 @@ var yields_default = async (req, context) => {
   console.log(`Updated db with ${values.length} yield entries`);
   return new Response("Success!");
 };
-var config = {
-  schedule: "0 2 * * *"
-};
-// Annotate the CommonJS export names for ESM import in node:
-0 && (module.exports = {
-  config
-});
 /*! Bundled license information:
 
 @noble/hashes/esm/utils.js:
