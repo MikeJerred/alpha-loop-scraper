@@ -1,5 +1,5 @@
 import { gql, request as gqlRequest } from 'graphql-request';
-import { base, mainnet, polygon, unichain } from 'viem/chains';
+import { arbitrum, base, mainnet, polygon, unichain } from 'viem/chains';
 import { apyToApr, isDefined } from '~/util';
 import type { YieldLoop } from '.';
 
@@ -135,6 +135,7 @@ export const scrape = async (): Promise<YieldLoop[]> => {
 const formatChainForUrl = (id: number) => {
   switch (id) {
     case mainnet.id: return 'ethereum';
+    case arbitrum.id: return 'arbitrum';
     case base.id: return 'base';
     case polygon.id: return 'polygon';
     case unichain.id: return 'unichain';
