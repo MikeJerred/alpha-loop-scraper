@@ -23,6 +23,9 @@ const defiLlamaPools = {
   rsweth: 'eff9b43c-a80d-4bfc-9f9e-55e02a8ef619',
   ethx: '90bfb3c2-5d35-4959-a275-ba5085b08aa3',
   bsdeth: 'ca775845-b68a-4084-8d8d-29c31970a643',
+  'eth+': '4e6cd326-72d5-4680-8d2f-3481d50e8bb1',
+  eth0: 'd6747cb4-9635-49f9-b417-cbfb9faa252e',
+  teth: '5762f4a8-bb48-45d6-90ed-2d93d1777169',
 
   // stables
   susds: 'd8c4eff5-c8a9-46fc-a888-057c4c668e72',
