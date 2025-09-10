@@ -98,9 +98,11 @@ export const scrape = async (): Promise<YieldLoop[]> => {
         return null;
       }
 
+      const chainId = +morphoBlue.chain.id;
+
       return {
         protocol: 'morpho' as const,
-        chainId: morphoBlue.chain.id,
+        chainId: chainId,
         borrowAsset: {
           address: loanAsset.address,
           symbol: loanAsset.symbol,
@@ -126,7 +128,7 @@ export const scrape = async (): Promise<YieldLoop[]> => {
           : state.liquidityAssetsUsd ?? 0,
         maxLtv: Number(BigInt(lltv) / 10n**12n) / 10**6,
         lltv: Number(BigInt(lltv) / 10n**12n) / 10**6,
-        link: `https://app.morpho.org/${formatChainForUrl(morphoBlue.chain.id)}/market/${uniqueKey}`,
+        link: `https://app.morpho.org/${formatChainForUrl(chainId)}/market/${uniqueKey}`,
       };
     })
     .filter(isDefined);
