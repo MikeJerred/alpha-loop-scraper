@@ -43168,6 +43168,8 @@ var formatChainForUrl = (id) => {
   switch (id) {
     case mainnet.id:
       return "ethereum";
+    case arbitrum.id:
+      return "arbitrum";
     case base.id:
       return "base";
     case polygon.id:
