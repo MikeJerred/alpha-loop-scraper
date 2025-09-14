@@ -138,7 +138,7 @@ async function getRate(chainId: number, poolAddressesProvider: `0x${string}`, to
   const cached = aaveRateCache.get(key);
   if (cached) return cached;
 
-  const timestamp = Math.floor(Date.now() / 1000) - 30*24*60*60;
+  const timestamp = Math.floor(Date.now() / 1000) - 365*24*60*60;
   const response = await fetchRetry(
     `https://aave-api-v2.aave.com/data/rates-history?reserveId=${key}&from=${timestamp}&resolutionInHours=24`
   );
