@@ -1,5 +1,5 @@
 import { createPublicClient, fallback, http, type FallbackTransport, type PublicClient } from 'viem';
-import { arbitrum, base, linea, mainnet, mantle, optimism, polygon, scroll, unichain, zksync } from 'viem/chains';
+import { arbitrum, base, linea, mainnet, mantle, optimism, plasma, polygon, scroll, unichain, zksync } from 'viem/chains';
 
 const ALCHEMY_API_KEY = process.env.ALCHEMY_API_KEY;
 const INFURA_API_KEY = process.env.INFURA_API_KEY;
@@ -42,6 +42,10 @@ const chains = [
     `https://opt-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
     'https://optimism-mainnet.public.blastapi.io',
     ...optimism.rpcUrls.default.http,
+  ]],
+  [plasma, [
+    `https://plasma-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
+    ...plasma.rpcUrls.default.http,
   ]],
   [polygon, [
     `https://polygon-mainnet.infura.io/v3/${INFURA_API_KEY}`,

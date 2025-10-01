@@ -2,13 +2,13 @@ import {
   AaveV3Arbitrum,
   AaveV3Base,
   AaveV3Ethereum,
-  AaveV3EthereumEtherFi,
   AaveV3EthereumLido,
+  AaveV3Plasma,
   AaveV3Scroll,
   AaveV3ZkSync,
 } from '@bgd-labs/aave-address-book';
 import { getContract } from 'viem';
-import { arbitrum, base, mainnet, scroll, zksync } from 'viem/chains';
+import { arbitrum, base, mainnet, plasma, scroll, zksync } from 'viem/chains';
 import { IUiPoolDataProvider_ABI } from '~/abi/AaveUiPoolDataProvider';
 import { getClient } from '~/blockchain';
 import { average, fetchRetry, isCorrelated } from '~/util';
@@ -31,11 +31,11 @@ type AaveRateCacheItem = {
 
 const providers = {
   mainnet: [AaveV3Ethereum, mainnet.id],
-  etherfi: [AaveV3EthereumEtherFi, mainnet.id],
   lido: [AaveV3EthereumLido, mainnet.id],
   arbitrum: [AaveV3Arbitrum, arbitrum.id],
   base: [AaveV3Base, base.id],
   scroll: [AaveV3Scroll, scroll.id],
+  plasma: [AaveV3Plasma, plasma.id],
   zksync: [AaveV3ZkSync, zksync.id],
 } as const;
 

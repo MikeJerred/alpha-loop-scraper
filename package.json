@@ -12,17 +12,18 @@
     "generate:abis": "node --experimental-strip-types ./scripts/generate-abis.ts"
   },
   "dependencies": {
-    "@bgd-labs/aave-address-book": "^4.24.1",
-    "@netlify/cache": "^3.0.5",
-    "@netlify/functions": "^4.1.8",
+    "@aave/client": "^0.6.1",
+    "@bgd-labs/aave-address-book": "^4.31.0",
+    "@netlify/cache": "^3.1.1",
+    "@netlify/functions": "^4.2.6",
     "graphql-request": "^7.2.0",
-    "kysely": "^0.28.2",
+    "kysely": "^0.28.7",
     "pg": "^8.16.3",
-    "viem": "^2.31.6"
+    "viem": "^2.37.9"
   },
   "devDependencies": {
-    "@types/pg": "^8.15.4",
-    "esbuild": "^0.25.8",
-    "netlify-cli": "^22.2.1"
+    "@types/pg": "^8.15.5",
+    "esbuild": "^0.25.10",
+    "netlify-cli": "^23.8.1"
   }
 }
