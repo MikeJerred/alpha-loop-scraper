@@ -26,6 +26,11 @@ const defiLlamaPools = {
   'eth+': '4e6cd326-72d5-4680-8d2f-3481d50e8bb1',
   eth0: 'd6747cb4-9635-49f9-b417-cbfb9faa252e',
   teth: '5762f4a8-bb48-45d6-90ed-2d93d1777169',
+  yoeth: '2070ceaf-eedb-4795-9ede-6841ec515e1a',
+  yeth: '5018322c-f433-4870-83b9-754991b8e3e2',
+
+  // btc
+  ybtc: '3eb3663d-7cf7-4a24-9f26-24de17c616aa',
 
   // stables
   susds: 'd8c4eff5-c8a9-46fc-a888-057c4c668e72',
@@ -37,6 +42,7 @@ const defiLlamaPools = {
   srusd: '402b0554-9525-40af-8703-3c59b0aa863c',
   stusdt: 'e1b9420a-30d4-4c27-8e01-2d6cd240e1b9',
   hyusd: '8449ce9a-fc8d-4d93-991a-55113fa80a5a',
+  yusd: '7c43e890-cefc-48d1-bf80-203cdb7dfe4f',
 };
 
 type PoolsResponse = {

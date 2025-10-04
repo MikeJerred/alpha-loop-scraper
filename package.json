@@ -9,21 +9,22 @@
     "build:yields": "esbuild ./netlify/functions/yields.ts --bundle --platform=node --format=esm --external:pg --outfile=./netlify/functions/yields.mjs",
     "invoke:loops": "netlify functions:invoke loops",
     "invoke:yields": "netlify functions:invoke yields",
-    "generate:abis": "node --experimental-strip-types ./scripts/generate-abis.ts"
+    "generate:abis": "node --experimental-strip-types ./scripts/generate-abis.ts",
+    "test": "esbuild ./scripts/test.ts --bundle --platform=node --format=esm --external:pg --outfile=./scripts/test.mjs && node ./scripts/test.mjs"
   },
   "dependencies": {
     "@aave/client": "^0.6.1",
-    "@bgd-labs/aave-address-book": "^4.31.0",
+    "@bgd-labs/aave-address-book": "^4.32.0",
     "@netlify/cache": "^3.1.1",
-    "@netlify/functions": "^4.2.6",
+    "@netlify/functions": "^4.2.7",
     "graphql-request": "^7.2.0",
     "kysely": "^0.28.7",
     "pg": "^8.16.3",
-    "viem": "^2.37.9"
+    "viem": "^2.37.12"
   },
   "devDependencies": {
     "@types/pg": "^8.15.5",
     "esbuild": "^0.25.10",
-    "netlify-cli": "^23.8.1"
+    "netlify-cli": "^23.9.1"
   }
 }

@@ -1,5 +1,6 @@
 import type { Context } from '@netlify/functions';
 import { db } from '~/database';
+import { apyToApr } from '~/util';
 import { getPendleYield, scrapeDefiLlama, type YieldData } from '~/yields';
 
 export default async (req: Request, context: Context) => {
@@ -31,6 +32,19 @@ export default async (req: Request, context: Context) => {
         },
       } as YieldData];
     }),
+    {
+      // hardcode LBTC yield for now
+      asset: {
+        addresses: [],
+        symbol: 'lbtc',
+      },
+      yields: {
+        daily: apyToApr(0.82),
+        weekly: apyToApr(0.82),
+        monthly: apyToApr(0.82),
+        yearly: apyToApr(0.82),
+      },
+    }
   ]);
 
   const values = yields.flat().map(data => ({

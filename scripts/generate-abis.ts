@@ -6,12 +6,17 @@ import 'dotenv/config';
 const awaitableExec = promisify(exec);
 
 const addresses = [
+  // https://github.com/aave/aave-address-book/blob/main/scripts/generateABIs.ts
   {
-    // https://github.com/aave/aave-address-book/blob/main/scripts/generateABIs.ts
     file: 'AaveUiPoolDataProvider.ts',
     name: 'IUiPoolDataProvider_ABI',
-    address: '0x3f78bbd206e4d3c504eb854232eda7e47e9fd8fc'
-  }
+    address: '0x3f78bbd206e4d3c504eb854232eda7e47e9fd8fc',
+  },
+  {
+    file: 'AaveUiIncentiveDataProvider.ts',
+    name: 'IUiIncentiveDataProvider_ABI',
+    address: '0xe3dFf4052F0bF6134ACb73bEaE8fe2317d71F047',
+  },
 ];
 
 for (const { file, name, address } of addresses) {

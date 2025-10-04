@@ -1,3 +1,5 @@
+import { chainId as aaveChainId, evmAddress, AaveClient, TimeWindow } from '@aave/client';
+import { borrowAPYHistory, supplyAPYHistory } from '@aave/client/actions';
 import {
   AaveV3Arbitrum,
   AaveV3Base,
@@ -10,8 +12,9 @@ import {
 import { getContract } from 'viem';
 import { arbitrum, base, mainnet, plasma, scroll, zksync } from 'viem/chains';
 import { IUiPoolDataProvider_ABI } from '~/abi/AaveUiPoolDataProvider';
+import { IUiIncentiveDataProvider_ABI } from '~/abi/AaveUiIncentiveDataProvider';
 import { getClient } from '~/blockchain';
-import { average, fetchRetry, isCorrelated } from '~/util';
+import { average, isCorrelated } from '~/util';
 import type { YieldLoop } from '.';
 
 type AaveRateCacheItem = {
@@ -35,9 +38,11 @@ const providers = {
   arbitrum: [AaveV3Arbitrum, arbitrum.id],
   base: [AaveV3Base, base.id],
   scroll: [AaveV3Scroll, scroll.id],
-  plasma: [AaveV3Plasma, plasma.id],
+  // plasma: [AaveV3Plasma, plasma.id],
   zksync: [AaveV3ZkSync, zksync.id],
 } as const;
+
+const aaveClient = AaveClient.create();
 
 const aaveRateCache = new Map<string, AaveRateCacheItem | null>();
 
@@ -91,8 +96,8 @@ async function getProviderLoops(providerKey: string, [provider, chainId]: typeof
         ...validEModes.map(eMode => eMode.eMode.liquidationThreshold / 10000),
       );
 
-      const supplyAPRs = (await getRate(chainId, provider.POOL_ADDRESSES_PROVIDER, supplyAsset.underlyingAsset))?.supply;
-      const borrowAPRs = (await getRate(chainId, provider.POOL_ADDRESSES_PROVIDER, borrowAsset.underlyingAsset))?.borrow;
+      const supplyAPRs = (await getRate(chainId, provider.POOL, supplyAsset.underlyingAsset))?.supply;
+      const borrowAPRs = (await getRate(chainId, provider.POOL, borrowAsset.underlyingAsset))?.borrow;
 
       if (!borrowAPRs) continue;
 
@@ -133,36 +138,101 @@ async function getProviderLoops(providerKey: string, [provider, chainId]: typeof
   return results;
 }
 
-async function getRate(chainId: number, poolAddressesProvider: `0x${string}`, tokenAddress: `0x${string}`) {
-  const key = `${tokenAddress}${poolAddressesProvider}${chainId}`;
+// TODO: implement this when the Aave API actually works
+export async function getIncentives(chainId: number, pool: `0x${string}`, tokenAddress: `0x${string}`) {
+  // const client = getClient(324);
+  // const uiIncentives = getContract({
+  //   abi: IUiIncentiveDataProvider_ABI,
+  //   address: AaveV3ZkSync.UI_INCENTIVE_DATA_PROVIDER,
+  //   client,
+  // });
+
+  // const data = await uiIncentives.read.getReservesIncentivesData([AaveV3ZkSync.POOL_ADDRESSES_PROVIDER]);
+  // return data;
+
+  // const data = await reserve(aaveClient, {
+  //   chainId: aaveChainId(chainId),
+  //   market: evmAddress(pool),
+  //   underlyingToken: evmAddress(tokenAddress),
+  // })
+
+  // const marketResponse = await market(aaveClient, {
+  //   chainId: aaveChainId(chainId),
+  //   address: evmAddress(pool),
+  // });
+
+  // if (data.isErr()) {
+  //   return null;
+  // }
+
+  // return data.value;
+
+  // const xx = marketResponse.value?.borrowReserves[0].incentives[0];
+  // marketResponse.value?.supplyReserves[0].incentives[0];
+}
+
+async function getRate(chainId: number, pool: `0x${string}`, tokenAddress: `0x${string}`) {
+  const key = `${tokenAddress}${pool}${chainId}`;
   const cached = aaveRateCache.get(key);
   if (cached) return cached;
 
-  const timestamp = Math.floor(Date.now() / 1000) - 365*24*60*60;
-  const response = await fetchRetry(
-    `https://aave-api-v2.aave.com/data/rates-history?reserveId=${key}&from=${timestamp}&resolutionInHours=24`
-  );
-  const data = await response.json() as { liquidityRate_avg: number, variableBorrowRate_avg: number }[];
+  const borrowResponse = await borrowAPYHistory(aaveClient, {
+    chainId: aaveChainId(chainId),
+    market: evmAddress(pool),
+    underlyingToken: evmAddress(tokenAddress),
+    window: TimeWindow.LastYear,
+  });
 
-  const result = data && data.length > 0
+  if (borrowResponse.isErr()) {
+    return null;
+  }
+
+  const supplyResponse = await supplyAPYHistory(aaveClient, {
+    chainId: aaveChainId(chainId),
+    market: evmAddress(pool),
+    underlyingToken: evmAddress(tokenAddress),
+    window: TimeWindow.LastYear,
+  });
+
+  if (supplyResponse.isErr()) {
+    return null;
+  }
+
+  const borrowData = borrowResponse?.value?.sort((a, b) => a.date < b.date ? 1 : -1) ?? [];
+  const supplyData = supplyResponse?.value?.sort((a, b) => a.date < b.date ? 1 : -1) ?? [];
+
+  const result = borrowResponse.isOk() && borrowData.length || supplyResponse.isOk() && supplyData.length
     ? {
-      supply: {
-        daily: average(data.map(x => x.liquidityRate_avg).slice(-1)),
-        weekly: average(data.map(x => x.liquidityRate_avg).slice(-7)),
-        monthly: average(data.map(x => x.liquidityRate_avg).slice(-30)),
-        yearly: average(data.map(x => x.liquidityRate_avg).slice(-365)),
-      },
-      borrow: {
-        daily: average(data.map(x => x.variableBorrowRate_avg).slice(-1)),
-        weekly: average(data.map(x => x.variableBorrowRate_avg).slice(-7)),
-        monthly: average(data.map(x => x.variableBorrowRate_avg).slice(-30)),
-        yearly: average(data.map(x => x.variableBorrowRate_avg).slice(-365)),
-      },
+      supply: supplyResponse.isOk() && supplyData.length > 0
+        ? {
+          daily: average(borrowData.map(x => +x.avgRate.value).slice(-1)),
+          weekly: average(borrowData.map(x => +x.avgRate.value).slice(-7)),
+          monthly: average(borrowData.map(x => +x.avgRate.value).slice(-30)),
+          yearly: average(borrowData.map(x => +x.avgRate.value).slice(-365)),
+        }
+        : {
+          daily: 0,
+          weekly: 0,
+          monthly: 0,
+          yearly: 0,
+        },
+      borrow: borrowResponse.isOk() && borrowData.length > 0
+        ? {
+          daily: average(supplyData.map(x => +x.avgRate.value).slice(-1)),
+          weekly: average(supplyData.map(x => +x.avgRate.value).slice(-7)),
+          monthly: average(supplyData.map(x => +x.avgRate.value).slice(-30)),
+          yearly: average(supplyData.map(x => +x.avgRate.value).slice(-365)),
+        }
+        : {
+          daily: 0,
+          weekly: 0,
+          monthly: 0,
+          yearly: 0,
+        },
     } satisfies AaveRateCacheItem
     : null;
 
   aaveRateCache.set(key, result);
-
   return result;
 }
 
