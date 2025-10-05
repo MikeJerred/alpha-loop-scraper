@@ -9,9 +9,9 @@ export default async (req: Request, context: Context) => {
   const borrowAddresses = db.selectFrom('loops').select(['chain_id', 'borrow_asset_address as address', 'borrow_asset_symbol as symbol']);
   const supplyAddresses = db.selectFrom('loops').select(['chain_id', 'supply_asset_address as address', 'supply_asset_symbol as symbol']);
   const results = await borrowAddresses.union(supplyAddresses).execute();
-  const symbols = new Set(results.map(result => result.symbol.toLowerCase()).filter(symbol => !!symbol));
+  const existingSymbols = new Set(results.map(result => result.symbol.toLowerCase()).filter(symbol => !!symbol));
 
-  console.log(`Found ${symbols.size} distinct symbols in the existing loops table`);
+  console.log(`Found ${existingSymbols.size} distinct symbols in the existing loops table`);
 
   const yields = await Promise.all([
     scrapeDefiLlama(),
@@ -47,13 +47,25 @@ export default async (req: Request, context: Context) => {
     }
   ]);
 
-  const values = yields.flat().map(data => ({
-    asset_symbol: data.asset.symbol,
-    yield_apr_daily: data.yields.daily,
-    yield_apr_weekly: data.yields.weekly,
-    yield_apr_monthly: data.yields.monthly,
-    yield_apr_yearly: data.yields.yearly,
-  }));
+  const symbols = new Set<string>();
+
+  const values = yields.flat()
+    .filter(data => {
+      // remove duplicates
+      if (!symbols.has(data.asset.symbol)) {
+        symbols.add(data.asset.symbol);
+        return true;
+      }
+
+      return false;
+    })
+    .map(data => ({
+      asset_symbol: data.asset.symbol,
+      yield_apr_daily: data.yields.daily,
+      yield_apr_weekly: data.yields.weekly,
+      yield_apr_monthly: data.yields.monthly,
+      yield_apr_yearly: data.yields.yearly,
+    }));
 
   console.log(`Found ${values.length} yields, updating db...`);
 

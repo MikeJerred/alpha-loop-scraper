@@ -3353,7 +3353,7 @@ var InsertQueryBuilder = class _InsertQueryBuilder {
    */
   async execute() {
     const compiledQuery = this.compile();
-    const result = await this.#props.executor.executeQuery(compiledQuery, this.#props.queryId);
+    const result = await this.#props.executor.executeQuery(compiledQuery);
     const { adapter } = this.#props.executor;
     const query = compiledQuery.query;
     if (query.returning && adapter.supportsReturning || query.output && adapter.supportsOutput) {
@@ -3389,7 +3389,7 @@ var InsertQueryBuilder = class _InsertQueryBuilder {
   }
   async *stream(chunkSize = 100) {
     const compiledQuery = this.compile();
-    const stream = this.#props.executor.stream(compiledQuery, chunkSize, this.#props.queryId);
+    const stream = this.#props.executor.stream(compiledQuery, chunkSize);
     for await (const item of stream) {
       yield* item.rows;
     }
@@ -3862,7 +3862,7 @@ var DeleteQueryBuilder = class _DeleteQueryBuilder {
    */
   async execute() {
     const compiledQuery = this.compile();
-    const result = await this.#props.executor.executeQuery(compiledQuery, this.#props.queryId);
+    const result = await this.#props.executor.executeQuery(compiledQuery);
     const { adapter } = this.#props.executor;
     const query = compiledQuery.query;
     if (query.returning && adapter.supportsReturning || query.output && adapter.supportsOutput) {
@@ -3896,7 +3896,7 @@ var DeleteQueryBuilder = class _DeleteQueryBuilder {
   }
   async *stream(chunkSize = 100) {
     const compiledQuery = this.compile();
-    const stream = this.#props.executor.stream(compiledQuery, chunkSize, this.#props.queryId);
+    const stream = this.#props.executor.stream(compiledQuery, chunkSize);
     for await (const item of stream) {
       yield* item.rows;
     }
@@ -4373,7 +4373,7 @@ var UpdateQueryBuilder = class _UpdateQueryBuilder {
    */
   async execute() {
     const compiledQuery = this.compile();
-    const result = await this.#props.executor.executeQuery(compiledQuery, this.#props.queryId);
+    const result = await this.#props.executor.executeQuery(compiledQuery);
     const { adapter } = this.#props.executor;
     const query = compiledQuery.query;
     if (query.returning && adapter.supportsReturning || query.output && adapter.supportsOutput) {
@@ -4409,7 +4409,7 @@ var UpdateQueryBuilder = class _UpdateQueryBuilder {
   }
   async *stream(chunkSize = 100) {
     const compiledQuery = this.compile();
-    const stream = this.#props.executor.stream(compiledQuery, chunkSize, this.#props.queryId);
+    const stream = this.#props.executor.stream(compiledQuery, chunkSize);
     for await (const item of stream) {
       yield* item.rows;
     }
@@ -5629,7 +5629,11 @@ var WithSchemaTransformer = class extends OperationNodeTransformer {
       }
     }
     if ("using" in node && node.using) {
-      this.#collectSchemableIdsFromTableExpr(node.using, schemableIds);
+      if (JoinNode.is(node.using)) {
+        this.#collectSchemableIdsFromTableExpr(node.using.table, schemableIds);
+      } else {
+        this.#collectSchemableIdsFromTableExpr(node.using, schemableIds);
+      }
     }
     return schemableIds;
   }
@@ -5780,20 +5784,20 @@ var QueryExecutorBase = class {
     }
     return node;
   }
-  async executeQuery(compiledQuery, queryId) {
+  async executeQuery(compiledQuery) {
     return await this.provideConnection(async (connection) => {
       const result = await connection.executeQuery(compiledQuery);
       if ("numUpdatedOrDeletedRows" in result) {
         logOnce("kysely:warning: outdated driver/plugin detected! `QueryResult.numUpdatedOrDeletedRows` has been replaced with `QueryResult.numAffectedRows`.");
       }
-      return await this.#transformResult(result, queryId);
+      return await this.#transformResult(result, compiledQuery.queryId);
     });
   }
-  async *stream(compiledQuery, chunkSize, queryId) {
+  async *stream(compiledQuery, chunkSize) {
     const { connection, release } = await provideControlledConnection(this);
     try {
       for await (const result of connection.streamQuery(compiledQuery, chunkSize)) {
-        yield await this.#transformResult(result, queryId);
+        yield await this.#transformResult(result, compiledQuery.queryId);
       }
     } finally {
       release();
@@ -6246,7 +6250,7 @@ var WheneableMergeQueryBuilder = class _WheneableMergeQueryBuilder {
    */
   async execute() {
     const compiledQuery = this.compile();
-    const result = await this.#props.executor.executeQuery(compiledQuery, this.#props.queryId);
+    const result = await this.#props.executor.executeQuery(compiledQuery);
     const { adapter } = this.#props.executor;
     const query = compiledQuery.query;
     if (query.returning && adapter.supportsReturning || query.output && adapter.supportsOutput) {
@@ -7588,7 +7592,7 @@ var SelectQueryBuilderImpl = class _SelectQueryBuilderImpl {
   }
   async execute() {
     const compiledQuery = this.compile();
-    const result = await this.#props.executor.executeQuery(compiledQuery, this.#props.queryId);
+    const result = await this.#props.executor.executeQuery(compiledQuery);
     return result.rows;
   }
   async executeTakeFirst() {
@@ -7605,7 +7609,7 @@ var SelectQueryBuilderImpl = class _SelectQueryBuilderImpl {
   }
   async *stream(chunkSize = 100) {
     const compiledQuery = this.compile();
-    const stream = this.#props.executor.stream(compiledQuery, chunkSize, this.#props.queryId);
+    const stream = this.#props.executor.stream(compiledQuery, chunkSize);
     for await (const item of stream) {
       yield* item.rows;
     }
@@ -9564,7 +9568,7 @@ var AlterTableExecutor = class {
     return this.#props.executor.compileQuery(this.toOperationNode(), this.#props.queryId);
   }
   async execute() {
-    await this.#props.executor.executeQuery(this.compile(), this.#props.queryId);
+    await this.#props.executor.executeQuery(this.compile());
   }
 };
 
@@ -9626,7 +9630,7 @@ var AlterTableAddForeignKeyConstraintBuilder = class _AlterTableAddForeignKeyCon
     return this.#props.executor.compileQuery(this.toOperationNode(), this.#props.queryId);
   }
   async execute() {
-    await this.#props.executor.executeQuery(this.compile(), this.#props.queryId);
+    await this.#props.executor.executeQuery(this.compile());
   }
 };
 
@@ -9680,7 +9684,7 @@ var AlterTableDropConstraintBuilder = class _AlterTableDropConstraintBuilder {
     return this.#props.executor.compileQuery(this.toOperationNode(), this.#props.queryId);
   }
   async execute() {
-    await this.#props.executor.executeQuery(this.compile(), this.#props.queryId);
+    await this.#props.executor.executeQuery(this.compile());
   }
 };
 
@@ -9880,7 +9884,7 @@ var AlterTableAddIndexBuilder = class _AlterTableAddIndexBuilder {
     return this.#props.executor.compileQuery(this.toOperationNode(), this.#props.queryId);
   }
   async execute() {
-    await this.#props.executor.executeQuery(this.compile(), this.#props.queryId);
+    await this.#props.executor.executeQuery(this.compile());
   }
 };
 
@@ -10219,7 +10223,7 @@ var AlterTableColumnAlteringBuilder = class _AlterTableColumnAlteringBuilder {
     return this.#props.executor.compileQuery(this.toOperationNode(), this.#props.queryId);
   }
   async execute() {
-    await this.#props.executor.executeQuery(this.compile(), this.#props.queryId);
+    await this.#props.executor.executeQuery(this.compile());
   }
 };
 
@@ -10421,7 +10425,7 @@ var CreateIndexBuilder = class _CreateIndexBuilder {
     return this.#props.executor.compileQuery(this.toOperationNode(), this.#props.queryId);
   }
   async execute() {
-    await this.#props.executor.executeQuery(this.compile(), this.#props.queryId);
+    await this.#props.executor.executeQuery(this.compile());
   }
 };
 
@@ -10451,7 +10455,7 @@ var CreateSchemaBuilder = class _CreateSchemaBuilder {
     return this.#props.executor.compileQuery(this.toOperationNode(), this.#props.queryId);
   }
   async execute() {
-    await this.#props.executor.executeQuery(this.compile(), this.#props.queryId);
+    await this.#props.executor.executeQuery(this.compile());
   }
 };
 
@@ -10848,7 +10852,7 @@ var CreateTableBuilder = class _CreateTableBuilder {
     return this.#props.executor.compileQuery(this.toOperationNode(), this.#props.queryId);
   }
   async execute() {
-    await this.#props.executor.executeQuery(this.compile(), this.#props.queryId);
+    await this.#props.executor.executeQuery(this.compile());
   }
 };
 
@@ -10900,7 +10904,7 @@ var DropIndexBuilder = class _DropIndexBuilder {
     return this.#props.executor.compileQuery(this.toOperationNode(), this.#props.queryId);
   }
   async execute() {
-    await this.#props.executor.executeQuery(this.compile(), this.#props.queryId);
+    await this.#props.executor.executeQuery(this.compile());
   }
 };
 
@@ -10940,7 +10944,7 @@ var DropSchemaBuilder = class _DropSchemaBuilder {
     return this.#props.executor.compileQuery(this.toOperationNode(), this.#props.queryId);
   }
   async execute() {
-    await this.#props.executor.executeQuery(this.compile(), this.#props.queryId);
+    await this.#props.executor.executeQuery(this.compile());
   }
 };
 
@@ -10980,7 +10984,7 @@ var DropTableBuilder = class _DropTableBuilder {
     return this.#props.executor.compileQuery(this.toOperationNode(), this.#props.queryId);
   }
   async execute() {
-    await this.#props.executor.executeQuery(this.compile(), this.#props.queryId);
+    await this.#props.executor.executeQuery(this.compile());
   }
 };
 
@@ -11100,7 +11104,7 @@ var CreateViewBuilder = class _CreateViewBuilder {
     return this.#props.executor.compileQuery(this.toOperationNode(), this.#props.queryId);
   }
   async execute() {
-    await this.#props.executor.executeQuery(this.compile(), this.#props.queryId);
+    await this.#props.executor.executeQuery(this.compile());
   }
 };
 
@@ -11167,7 +11171,7 @@ var DropViewBuilder = class _DropViewBuilder {
     return this.#props.executor.compileQuery(this.toOperationNode(), this.#props.queryId);
   }
   async execute() {
-    await this.#props.executor.executeQuery(this.compile(), this.#props.queryId);
+    await this.#props.executor.executeQuery(this.compile());
   }
 };
 
@@ -11225,7 +11229,7 @@ var CreateTypeBuilder = class _CreateTypeBuilder {
     return this.#props.executor.compileQuery(this.toOperationNode(), this.#props.queryId);
   }
   async execute() {
-    await this.#props.executor.executeQuery(this.compile(), this.#props.queryId);
+    await this.#props.executor.executeQuery(this.compile());
   }
 };
 
@@ -11276,7 +11280,7 @@ var DropTypeBuilder = class _DropTypeBuilder {
     return this.#props.executor.compileQuery(this.toOperationNode(), this.#props.queryId);
   }
   async execute() {
-    await this.#props.executor.executeQuery(this.compile(), this.#props.queryId);
+    await this.#props.executor.executeQuery(this.compile());
   }
 };
 
@@ -11384,7 +11388,7 @@ var RefreshMaterializedViewBuilder = class _RefreshMaterializedViewBuilder {
     return this.#props.executor.compileQuery(this.toOperationNode(), this.#props.queryId);
   }
   async execute() {
-    await this.#props.executor.executeQuery(this.compile(), this.#props.queryId);
+    await this.#props.executor.executeQuery(this.compile());
   }
 };
 
@@ -12529,9 +12533,12 @@ var Kysely = class _Kysely extends QueryCreator {
    *
    * See {@link https://github.com/kysely-org/kysely/blob/master/site/docs/recipes/0004-splitting-query-building-and-execution.md#execute-compiled-queries splitting build, compile and execute code recipe} for more information.
    */
-  executeQuery(query, queryId = createQueryId()) {
+  executeQuery(query, queryId) {
+    if (queryId !== void 0) {
+      logOnce("Passing `queryId` in `db.executeQuery` is deprecated and will result in a compile-time error in the future.");
+    }
     const compiledQuery = isCompilable(query) ? query.compile() : query;
-    return this.getExecutor().executeQuery(compiledQuery, queryId);
+    return this.getExecutor().executeQuery(compiledQuery);
   }
   async [Symbol.asyncDispose]() {
     await this.destroy();
@@ -12626,13 +12633,17 @@ var TransactionBuilder = class _TransactionBuilder {
         ...kyselyProps,
         executor
       });
+      let transactionBegun = false;
       try {
         await this.#props.driver.beginTransaction(connection, settings);
+        transactionBegun = true;
         const result = await callback(transaction);
         await this.#props.driver.commitTransaction(connection);
         return result;
       } catch (error) {
-        await this.#props.driver.rollbackTransaction(connection);
+        if (transactionBegun) {
+          await this.#props.driver.rollbackTransaction(connection);
+        }
         throw error;
       }
     });
@@ -12938,13 +12949,13 @@ var NotCommittedOrRolledBackAssertingExecutor = class _NotCommittedOrRolledBackA
   provideConnection(consumer) {
     return this.#executor.provideConnection(consumer);
   }
-  executeQuery(compiledQuery, queryId) {
+  executeQuery(compiledQuery) {
     assertNotCommittedOrRolledBack(this.#state);
-    return this.#executor.executeQuery(compiledQuery, queryId);
+    return this.#executor.executeQuery(compiledQuery);
   }
-  stream(compiledQuery, chunkSize, queryId) {
+  stream(compiledQuery, chunkSize) {
     assertNotCommittedOrRolledBack(this.#state);
-    return this.#executor.stream(compiledQuery, chunkSize, queryId);
+    return this.#executor.stream(compiledQuery, chunkSize);
   }
   withConnectionProvider(connectionProvider) {
     return new _NotCommittedOrRolledBackAssertingExecutor(this.#executor.withConnectionProvider(connectionProvider), this.#state);
@@ -12998,7 +13009,7 @@ var RawBuilderImpl = class _RawBuilderImpl {
   }
   async execute(executorProvider) {
     const executor = this.#getExecutor(executorProvider);
-    return executor.executeQuery(this.#compile(executor), this.#props.queryId);
+    return executor.executeQuery(this.#compile(executor));
   }
   #getExecutor(executorProvider) {
     const executor = executorProvider !== void 0 ? executorProvider.getExecutor() : NOOP_QUERY_EXECUTOR;
@@ -14511,14 +14522,12 @@ var DefaultQueryCompiler = class extends OperationNodeVisitor {
   appendImmediateValue(value) {
     if (isString(value)) {
       this.appendStringLiteral(value);
-    } else if (isNumber(value) || isBoolean(value)) {
+    } else if (isNumber(value) || isBoolean(value) || isBigInt(value)) {
       this.append(value.toString());
     } else if (isNull(value)) {
       this.append("null");
     } else if (isDate(value)) {
       this.appendImmediateValue(value.toISOString());
-    } else if (isBigInt(value)) {
-      this.appendImmediateValue(value.toString());
     } else {
       throw new Error(`invalid immediate value ${value}`);
     }
@@ -14651,7 +14660,7 @@ var PostgresIntrospector = class {
       "r",
       "v",
       "p"
-    ]).where("ns.nspname", "!~", "^pg_").where("ns.nspname", "!=", "information_schema").where("a.attnum", ">=", 0).where("a.attisdropped", "!=", true).orderBy("ns.nspname").orderBy("c.relname").orderBy("a.attnum").$castTo();
+    ]).where("ns.nspname", "!~", "^pg_").where("ns.nspname", "!=", "information_schema").where("ns.nspname", "!=", "crdb_internal").where("a.attnum", ">=", 0).where("a.attisdropped", "!=", true).orderBy("ns.nspname").orderBy("c.relname").orderBy("a.attnum").$castTo();
     if (!options.withInternalKyselyTables) {
       query = query.where("c.relname", "!=", DEFAULT_MIGRATION_TABLE).where("c.relname", "!=", DEFAULT_MIGRATION_LOCK_TABLE);
     }
@@ -14892,6 +14901,10 @@ var defiLlamaPools = {
   "eth+": "4e6cd326-72d5-4680-8d2f-3481d50e8bb1",
   eth0: "d6747cb4-9635-49f9-b417-cbfb9faa252e",
   teth: "5762f4a8-bb48-45d6-90ed-2d93d1777169",
+  yoeth: "2070ceaf-eedb-4795-9ede-6841ec515e1a",
+  yeth: "5018322c-f433-4870-83b9-754991b8e3e2",
+  // btc
+  ybtc: "3eb3663d-7cf7-4a24-9f26-24de17c616aa",
   // stables
   susds: "d8c4eff5-c8a9-46fc-a888-057c4c668e72",
   susde: "66985a81-9c51-46ca-9977-42b4fe7bc6df",
@@ -14901,7 +14914,8 @@ var defiLlamaPools = {
   "usd0++": "55b0893b-1dbb-47fd-9912-5e439cd3d511",
   srusd: "402b0554-9525-40af-8703-3c59b0aa863c",
   stusdt: "e1b9420a-30d4-4c27-8e01-2d6cd240e1b9",
-  hyusd: "8449ce9a-fc8d-4d93-991a-55113fa80a5a"
+  hyusd: "8449ce9a-fc8d-4d93-991a-55113fa80a5a",
+  yusd: "7c43e890-cefc-48d1-bf80-203cdb7dfe4f"
 };
 var scrape = async () => {
   const results = await Promise.all(Object.entries(defiLlamaPools).map(async ([symbol, pool]) => {
@@ -14956,7 +14970,7 @@ function defineChain(chain) {
 }
 
 // node_modules/viem/_esm/errors/version.js
-var version = "2.31.6";
+var version = "2.37.12";
 
 // node_modules/viem/_esm/errors/base.js
 var errorConfig = {
@@ -15303,8 +15317,8 @@ function defineFormatter(type, format) {
   return ({ exclude, format: overrides }) => {
     return {
       exclude,
-      format: (args) => {
-        const formatted = format(args);
+      format: (args, action) => {
+        const formatted = format(args, action);
         if (exclude) {
           for (const key of exclude) {
             delete formatted[key];
@@ -15312,7 +15326,7 @@ function defineFormatter(type, format) {
         }
         return {
           ...formatted,
-          ...overrides(args)
+          ...overrides(args, action)
         };
       },
       type
@@ -15328,7 +15342,7 @@ var transactionType = {
   "0x3": "eip4844",
   "0x4": "eip7702"
 };
-function formatTransaction(transaction) {
+function formatTransaction(transaction, _) {
   const transaction_ = {
     ...transaction,
     blockHash: transaction.blockHash ? transaction.blockHash : null,
@@ -15392,7 +15406,7 @@ function formatAuthorizationList(authorizationList) {
 }
 
 // node_modules/viem/_esm/utils/formatters/block.js
-function formatBlock(block) {
+function formatBlock(block, _) {
   const transactions = (block.transactions ?? []).map((transaction) => {
     if (typeof transaction === "string")
       return transaction;
@@ -15436,7 +15450,7 @@ var receiptStatuses = {
   "0x0": "reverted",
   "0x1": "success"
 };
-function formatTransactionReceipt(transactionReceipt) {
+function formatTransactionReceipt(transactionReceipt, _) {
   const receipt = {
     ...transactionReceipt,
     blockNumber: transactionReceipt.blockNumber ? BigInt(transactionReceipt.blockNumber) : null,
@@ -17360,6 +17374,7 @@ var arbitrum = /* @__PURE__ */ defineChain({
   id: 42161,
   name: "Arbitrum One",
   nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+  blockTime: 250,
   rpcUrls: {
     default: {
       http: ["https://arb1.arbitrum.io/rpc"]
@@ -17430,12 +17445,22 @@ var base = /* @__PURE__ */ defineChain({
   },
   sourceId
 });
+var basePreconf = /* @__PURE__ */ defineChain({
+  ...base,
+  experimental_preconfirmationTime: 200,
+  rpcUrls: {
+    default: {
+      http: ["https://mainnet-preconf.base.org"]
+    }
+  }
+});
 
 // node_modules/viem/_esm/chains/definitions/mainnet.js
 var mainnet = /* @__PURE__ */ defineChain({
   id: 1,
   name: "Ethereum",
   nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+  blockTime: 12e3,
   rpcUrls: {
     default: {
       http: ["https://eth.merkle.io"]
@@ -17449,12 +17474,9 @@ var mainnet = /* @__PURE__ */ defineChain({
     }
   },
   contracts: {
-    ensRegistry: {
-      address: "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e"
-    },
     ensUniversalResolver: {
-      address: "0xce01f8eee7E479C928F8919abD53E553a36CeF67",
-      blockCreated: 19258213
+      address: "0xeeeeeeee14d718c2b47d9923deab1335e144eeee",
+      blockCreated: 23085558
     },
     multicall3: {
       address: "0xca11bde05977b3631167028862be2a173976ca11",
@@ -17573,8 +17595,8 @@ var yields_default = async (req, context) => {
   const borrowAddresses = db.selectFrom("loops").select(["chain_id", "borrow_asset_address as address", "borrow_asset_symbol as symbol"]);
   const supplyAddresses = db.selectFrom("loops").select(["chain_id", "supply_asset_address as address", "supply_asset_symbol as symbol"]);
   const results = await borrowAddresses.union(supplyAddresses).execute();
-  const symbols = new Set(results.map((result) => result.symbol.toLowerCase()).filter((symbol) => !!symbol));
-  console.log(`Found ${symbols.size} distinct symbols in the existing loops table`);
+  const existingSymbols = new Set(results.map((result) => result.symbol.toLowerCase()).filter((symbol) => !!symbol));
+  console.log(`Found ${existingSymbols.size} distinct symbols in the existing loops table`);
   const yields = await Promise.all([
     scrape(),
     ...results.map(async ({ chain_id, address, symbol }) => {
@@ -17592,9 +17614,29 @@ var yields_default = async (req, context) => {
           yearly: null
         }
       }];
-    })
+    }),
+    {
+      // hardcode LBTC yield for now
+      asset: {
+        addresses: [],
+        symbol: "lbtc"
+      },
+      yields: {
+        daily: apyToApr(0.82),
+        weekly: apyToApr(0.82),
+        monthly: apyToApr(0.82),
+        yearly: apyToApr(0.82)
+      }
+    }
   ]);
-  const values = yields.flat().map((data) => ({
+  const symbols = /* @__PURE__ */ new Set();
+  const values = yields.flat().filter((data) => {
+    if (!symbols.has(data.asset.symbol)) {
+      symbols.add(data.asset.symbol);
+      return true;
+    }
+    return false;
+  }).map((data) => ({
     asset_symbol: data.asset.symbol,
     yield_apr_daily: data.yields.daily,
     yield_apr_weekly: data.yields.weekly,
