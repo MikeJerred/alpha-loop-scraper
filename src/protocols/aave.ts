@@ -203,7 +203,7 @@ async function getRate(chainId: number, pool: `0x${string}`, tokenAddress: `0x${
 
   const result = borrowResponse.isOk() && borrowData.length || supplyResponse.isOk() && supplyData.length
     ? {
-      supply: supplyResponse.isOk() && supplyData.length > 0
+      borrow: borrowResponse.isOk() && borrowData.length > 0
         ? {
           daily: average(borrowData.map(x => +x.avgRate.value).slice(-1)),
           weekly: average(borrowData.map(x => +x.avgRate.value).slice(-7)),
@@ -216,7 +216,7 @@ async function getRate(chainId: number, pool: `0x${string}`, tokenAddress: `0x${
           monthly: 0,
           yearly: 0,
         },
-      borrow: borrowResponse.isOk() && borrowData.length > 0
+      supply: supplyResponse.isOk() && supplyData.length > 0
         ? {
           daily: average(supplyData.map(x => +x.avgRate.value).slice(-1)),
           weekly: average(supplyData.map(x => +x.avgRate.value).slice(-7)),
