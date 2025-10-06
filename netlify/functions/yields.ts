@@ -39,10 +39,10 @@ export default async (req: Request, context: Context) => {
         symbol: 'lbtc',
       },
       yields: {
-        daily: apyToApr(0.82),
-        weekly: apyToApr(0.82),
-        monthly: apyToApr(0.82),
-        yearly: apyToApr(0.82),
+        daily: apyToApr(0.0082),
+        weekly: apyToApr(0.0082),
+        monthly: apyToApr(0.0082),
+        yearly: apyToApr(0.0082),
       },
     }
   ]);
