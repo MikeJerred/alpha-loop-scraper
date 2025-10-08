@@ -17595,8 +17595,10 @@ var yields_default = async (req, context) => {
   const borrowAddresses = db.selectFrom("loops").select(["chain_id", "borrow_asset_address as address", "borrow_asset_symbol as symbol"]);
   const supplyAddresses = db.selectFrom("loops").select(["chain_id", "supply_asset_address as address", "supply_asset_symbol as symbol"]);
   const results = await borrowAddresses.union(supplyAddresses).execute();
-  const existingSymbols = new Set(results.map((result) => result.symbol.toLowerCase()).filter((symbol) => !!symbol));
+  const existingSymbols = new Set(results.map((result2) => result2.symbol.toLowerCase()).filter((symbol) => !!symbol));
   console.log(`Found ${existingSymbols.size} distinct symbols in the existing loops table`);
+  const result = await fetch("https://mainnet.prod.lombard.finance/api/v1/analytics/estimated-apy");
+  const lbtcYield = (await result.json()).lbtc_estimated_apy;
   const yields = await Promise.all([
     scrape(),
     ...results.map(async ({ chain_id, address, symbol }) => {
@@ -17622,10 +17624,10 @@ var yields_default = async (req, context) => {
         symbol: "lbtc"
       },
       yields: {
-        daily: apyToApr(0.82),
-        weekly: apyToApr(0.82),
-        monthly: apyToApr(0.82),
-        yearly: apyToApr(0.82)
+        daily: apyToApr(lbtcYield),
+        weekly: apyToApr(lbtcYield),
+        monthly: apyToApr(lbtcYield),
+        yearly: apyToApr(lbtcYield)
       }
     }
   ]);

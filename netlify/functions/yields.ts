@@ -13,6 +13,9 @@ export default async (req: Request, context: Context) => {
 
   console.log(`Found ${existingSymbols.size} distinct symbols in the existing loops table`);
 
+  const result = await fetch('https://mainnet.prod.lombard.finance/api/v1/analytics/estimated-apy');
+  const lbtcYield = (await result.json()).lbtc_estimated_apy as number;
+
   const yields = await Promise.all([
     scrapeDefiLlama(),
     ...results.map(async ({ chain_id, address, symbol }) => {
@@ -39,10 +42,10 @@ export default async (req: Request, context: Context) => {
         symbol: 'lbtc',
       },
       yields: {
-        daily: apyToApr(0.0082),
-        weekly: apyToApr(0.0082),
-        monthly: apyToApr(0.0082),
-        yearly: apyToApr(0.0082),
+        daily: apyToApr(lbtcYield),
+        weekly: apyToApr(lbtcYield),
+        monthly: apyToApr(lbtcYield),
+        yearly: apyToApr(lbtcYield),
       },
     }
   ]);

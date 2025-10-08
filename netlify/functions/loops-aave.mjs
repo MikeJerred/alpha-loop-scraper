@@ -61889,7 +61889,7 @@ async function getRate(chainId, pool, tokenAddress) {
   const borrowData = borrowResponse?.value?.sort((a4, b2) => a4.date < b2.date ? 1 : -1) ?? [];
   const supplyData = supplyResponse?.value?.sort((a4, b2) => a4.date < b2.date ? 1 : -1) ?? [];
   const result = borrowResponse.isOk() && borrowData.length || supplyResponse.isOk() && supplyData.length ? {
-    supply: supplyResponse.isOk() && supplyData.length > 0 ? {
+    borrow: borrowResponse.isOk() && borrowData.length > 0 ? {
       daily: average(borrowData.map((x3) => +x3.avgRate.value).slice(-1)),
       weekly: average(borrowData.map((x3) => +x3.avgRate.value).slice(-7)),
       monthly: average(borrowData.map((x3) => +x3.avgRate.value).slice(-30)),
@@ -61900,7 +61900,7 @@ async function getRate(chainId, pool, tokenAddress) {
       monthly: 0,
       yearly: 0
     },
-    borrow: borrowResponse.isOk() && borrowData.length > 0 ? {
+    supply: supplyResponse.isOk() && supplyData.length > 0 ? {
       daily: average(supplyData.map((x3) => +x3.avgRate.value).slice(-1)),
       weekly: average(supplyData.map((x3) => +x3.avgRate.value).slice(-7)),
       monthly: average(supplyData.map((x3) => +x3.avgRate.value).slice(-30)),
