@@ -61813,7 +61813,7 @@ async function getProviderLoops(providerKey, [provider, chainId]) {
     if (!supplyAsset.symbol || !supplyAsset.isActive || supplyAsset.isFrozen || supplyAsset.isPaused) continue;
     for (const [borrowIndex, borrowAsset] of reserves.entries()) {
       if (!borrowAsset.symbol || !borrowAsset.isActive || borrowAsset.isFrozen || borrowAsset.isPaused) continue;
-      if (supplyAsset === borrowAsset || !borrowAsset.borrowingEnabled) continue;
+      if (borrowIndex === supplyIndex || !borrowAsset.borrowingEnabled || !supplyAsset.usageAsCollateralEnabled) continue;
       const areAssetsCorrelated = isCorrelated(supplyAsset.symbol, "btc") && isCorrelated(borrowAsset.symbol, "btc") || isCorrelated(supplyAsset.symbol, "eth") && isCorrelated(borrowAsset.symbol, "eth") || isCorrelated(supplyAsset.symbol, "usd") && isCorrelated(borrowAsset.symbol, "usd");
       if (!areAssetsCorrelated) continue;
       const validEModes = eModes.filter(

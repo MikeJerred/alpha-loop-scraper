@@ -74,7 +74,7 @@ async function getProviderLoops(providerKey: string, [provider, chainId]: typeof
 
     for (const [borrowIndex, borrowAsset] of reserves.entries()) {
       if (!borrowAsset.symbol || !borrowAsset.isActive || borrowAsset.isFrozen || borrowAsset.isPaused) continue;
-      if (supplyAsset === borrowAsset || !borrowAsset.borrowingEnabled) continue;
+      if (borrowIndex === supplyIndex || !borrowAsset.borrowingEnabled || !supplyAsset.usageAsCollateralEnabled) continue;
 
       const areAssetsCorrelated =
         isCorrelated(supplyAsset.symbol, 'btc') && isCorrelated(borrowAsset.symbol, 'btc') ||
